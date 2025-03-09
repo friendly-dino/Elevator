@@ -1,11 +1,11 @@
-﻿using Elevator.Interface;
+﻿using Elevator.App.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Elevator
+namespace Elevator.App
 {
     /// <summary>
     /// Represents a request for an elevator to move from one floor to another.

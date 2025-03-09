@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Elevator.Interface
+namespace Elevator.App.Interface
 {
     public interface IRequestDetail
     {
