@@ -11,8 +11,8 @@ try
 
     // simulate user request
 
-    elevatorController.AddRequest(new RequestDetail(2, 1));
-    elevatorController.AddRequest(new RequestDetail(9, 10));
+    elevatorController.AddRequest(new RequestDetail(1, 2));
+    elevatorController.AddRequest(new RequestDetail(1, 4));
     elevatorController.AddRequest(new RequestDetail(3, 9));
     elevatorController.AddRequest(new RequestDetail(1, 10,1));
     //elevatorController.AddRequest(new RequestDetail(9, 4));
