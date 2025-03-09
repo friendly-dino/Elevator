@@ -1,9 +1,9 @@
 ﻿using Elevator.Enum;
-using Elevator.Interface;
+using Elevator.App.Interface;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 
-namespace Elevator
+namespace Elevator.App
 {
     public class Elevator : IElevator
     {

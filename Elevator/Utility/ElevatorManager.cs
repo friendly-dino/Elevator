@@ -1,12 +1,12 @@
 ﻿using Elevator.Enum;
-using Elevator.Interface;
+using Elevator.App.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Elevator.Utility
+namespace Elevator.App.Utility
 {
     public class ElevatorManager
     {

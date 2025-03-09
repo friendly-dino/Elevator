@@ -5,10 +5,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Elevator.Interface;
-using Elevator.Utility;
+using Elevator.App.Interface;
+using Elevator.App.Utility;
 
-namespace Elevator.Controller
+namespace Elevator.App.Controller
 {
     public class ElevatorController : IElevatorController
     {
