@@ -1,17 +1,15 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Concurrent;
 using Elevator.App.Interface;
 using Elevator.App.Utility;
+using Elevator.App.Constants;
+using Elevator.App.Exceptions;
+using System.ComponentModel;
 
 namespace Elevator.App.Controller
 {
     public class ElevatorController : IElevatorController
     {
+        #region Constructor
         private readonly List<IElevator> _elevators;
         private readonly ElevatorManager _elevatorManager;
         private readonly BlockingCollection<RequestDetail> _requests = [];
@@ -29,29 +27,27 @@ namespace Elevator.App.Controller
             Thread controllerThread = new(ProcessRequests);
             controllerThread.Start();
         }
-
+        #endregion
+        [LogException]
         public void AddRequest(RequestDetail request)
         {
             if (request.OriginFloor > _maxFloors || request.GotoFloor > _maxFloors || request.OriginFloor < 1 || request.GotoFloor < 1)
-            {
-                Console.WriteLine("Request exceeds the maximum number of floors or is invalid.");
-                return;
-            }
+                throw new InvalidRequestException(ElevatorConstants.InvalidReqMsg);
+
             lock (lockObj)
                 _requests.Add(request);
-
-           // Console.WriteLine($"Request added: From floor: {request.OriginFloor} -> Going to floor: {request.GotoFloor}");
         }
 
+        [LogException]
         private void ProcessRequests()
         {
             foreach (var request in _requests.GetConsumingEnumerable())
             {
-                IElevator? bestElevator = GetBestElevatorForRequest(request);
-                if (bestElevator != null)
-                    bestElevator.AddRequest(request);
-                else
-                    Console.WriteLine("No suitable elevator found for the request.");
+                    IElevator? bestElevator = GetBestElevatorForRequest(request);
+                    if (bestElevator != null)
+                        bestElevator.AddRequest(request);
+                    else
+                        throw new ElevatorNotFoundException(ElevatorConstants.NoElevatorMsg);  
             }
         }
         private IElevator? GetBestElevatorForRequest(RequestDetail request)

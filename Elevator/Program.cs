@@ -1,16 +1,14 @@
 ﻿using Elevator.App;
 using Elevator.App.Controller;
 using Elevator.App.Interface;
+using Elevator.App.Constants;
 
 try
 {
-    int maxFloors = 10;
-    int numberOfElevators = 4;
 
-    IElevatorController elevatorController = new ElevatorController(maxFloors, numberOfElevators);
+    IElevatorController elevatorController = new ElevatorController(ElevatorConstants.MaxFloors, ElevatorConstants.NumberOfElevators);
 
-    // simulate user request
-
+    // simulate user requests
     elevatorController.AddRequest(new RequestDetail(1, 2));
     elevatorController.AddRequest(new RequestDetail(1, 4));
     elevatorController.AddRequest(new RequestDetail(3, 9));
@@ -26,11 +24,10 @@ try
     //elevatorController.AddRequest(new RequestDetail(4, 2));
     //elevatorController.AddRequest(new RequestDetail(9, 10));
     //elevatorController.AddRequest(new RequestDetail(9, 8));
-
     Console.ReadKey();
 
 }
-catch (Exception)
+catch (Exception ex)
 {
-	throw;
+	throw ex;
 }

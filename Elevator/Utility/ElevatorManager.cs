@@ -22,29 +22,36 @@ namespace Elevator.App.Utility
             IElevator bestElevator = null;
             int closestDistance = int.MaxValue;
             int fewestReqCount = int.MaxValue;
-
-            foreach (var elevator in _elevators)
+            try
             {
-                int distance = Math.Abs(elevator.CurrentFloor - requestedFloor);
-                bool isGoingToReqFlr = IsGoingTo(elevator, requestedFloor);
-
-                // if perfect match is found,return immediately, no need for further checks
-                if (elevator.CurrentFloor == requestedFloor && elevator.CurrentDirection == Direction.Idle)
-                    return elevator;
-
-                if (isGoingToReqFlr && (distance <= closestDistance && elevator.NumberOfRequests <= fewestReqCount))
+                foreach (var elevator in _elevators)
                 {
-                    closestDistance = distance;
-                    fewestReqCount = elevator.NumberOfRequests;
-                    bestElevator = elevator;
+                    int distance = Math.Abs(elevator.CurrentFloor - requestedFloor);
+                    bool isGoingToReqFlr = IsGoingTo(elevator, requestedFloor);
+
+                    // if perfect match is found,return immediately, no need for further checks
+                    if (elevator.CurrentFloor == requestedFloor && elevator.CurrentDirection == Direction.Idle)
+                        return elevator;
+
+                    if (isGoingToReqFlr && (distance <= closestDistance && elevator.NumberOfRequests <= fewestReqCount))
+                    {
+                        closestDistance = distance;
+                        fewestReqCount = elevator.NumberOfRequests;
+                        bestElevator = elevator;
+                    }
+                    else if (bestElevator == null && distance <= closestDistance)//Use the closest elevator if above conditions arent met
+                    {
+                        closestDistance = distance;
+                        bestElevator = elevator;
+                    }
                 }
-                else if (bestElevator == null && distance <= closestDistance)//Use the closest elevator if above conditions arent met
-                {
-                    closestDistance = distance;
-                    bestElevator = elevator;
-                }
+                return bestElevator;
             }
-            return bestElevator;
+            catch (Exception)
+            {
+                throw;
+            }
+            
         }
         /// <summary>
         /// Checks for the current direction of the elevator if it is going to the requested floor.

@@ -1,16 +1,20 @@
 ﻿using Elevator.Enum;
 using Elevator.App.Interface;
 using System.Collections.Concurrent;
-using System.Diagnostics;
+using Elevator.App.Constants;
+using Elevator.App.Utility;
+using Elevator.App.Exceptions;
 
 namespace Elevator.App
 {
     public class Elevator : IElevator
     {
+        #region Constructor
         public int ElevatorID { get; }
         public int CurrentFloor { get; private set; } = 1;
         public int NumberOfRequests => requests.Count;
         public Direction CurrentDirection { get; private set; } = Direction.Idle;
+        public IEnumerable<RequestDetail> Requests => requests; //for tests
         private readonly BlockingCollection<RequestDetail> requests = [];
         private readonly object lockObj = new();
         public Elevator(int id)
@@ -19,15 +23,17 @@ namespace Elevator.App
             Thread elevatorThread = new(ProcessRequests);
             elevatorThread.Start();
         }
+        #endregion
         public void AddRequest(RequestDetail request)
         {
             lock (lockObj)
                 requests.Add(request);
-
-            Console.WriteLine($"Request assigned to Elevator {ElevatorID}: From {request.OriginFloor}F -> Going to {request.GotoFloor}F");
+            ElevatorLog.Info($"Request assigned to Elevator {ElevatorID}: From {request.OriginFloor}F -> Going to {request.GotoFloor}F");
         }
+        [LogException]
         private void ProcessRequests()
         {
+            //notes: can add batch processing for advanced handling of requests ie same directions etc
             RequestDetail lastRequest = null;
             foreach (var request in requests.GetConsumingEnumerable())
             {
@@ -37,7 +43,7 @@ namespace Elevator.App
                     if (request.ElevatorID.HasValue && lastRequest != null) //check value to avoid error
                         sameElevID = lastRequest.ElevatorID == request.ElevatorID;
 
-                    if (lastRequest != null && sameElevID)
+                    if (lastRequest != null && sameElevID)//if request came from the same elevator, continue going to destination floor
                     {
                         MoveToFloor(request.GotoFloor);
                     }
@@ -51,16 +57,17 @@ namespace Elevator.App
                         CurrentDirection = Direction.Idle;
                     }
                     lastRequest = request;
-                    Console.WriteLine($"Elevator {ElevatorID} completed request: Source {request.OriginFloor} -> Destination {request.GotoFloor}");
+                    ElevatorLog.Info(String.Format(ElevatorConstants.RequestComplete,ElevatorID, request.OriginFloor, request.GotoFloor));
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    Console.WriteLine($"Elevator {ElevatorID} encountered an error: {ex.Message}");
+                    throw new ElevatorProcessRequestException(string.Format(ElevatorConstants.ProcessRequestError, ElevatorID));
                 }
             }
         }
-        private void MoveToFloor(int targetFloor, int originFloor =0)
+        private void MoveToFloor(int targetFloor)
         {
+            string sDirection = string.Empty;
             while (CurrentFloor != targetFloor)
             {
                 lock (lockObj)
@@ -69,25 +76,25 @@ namespace Elevator.App
                     {
                         CurrentFloor++;
                         CurrentDirection = Direction.GoUp;
+                        sDirection = ElevatorConstants.DirectionUp;
                     }
                     else
                     {
                         CurrentFloor--;
                         CurrentDirection = Direction.GoDown;
+                        sDirection = ElevatorConstants.DirectionDown;
                     }
                 }
-                string direction = CurrentDirection.Equals(Direction.GoUp) ? "is going UP" : "is going DOWN";
-                Console.WriteLine($"Elevator {ElevatorID} {direction}: {CurrentFloor}F/{targetFloor}F.");
-                Thread.Sleep(500); // Simulating elevator movement between floors
+                ElevatorLog.Info($"Elevator {ElevatorID} {sDirection}: {CurrentFloor}F/{targetFloor}F.");
+                Thread.Sleep(ElevatorConstants.MoveDuration); // Simulating elevator movement between floors
             }
-            Console.WriteLine($"Elevator {ElevatorID} has reached and stopped at floor {CurrentFloor}.");
-            //Thread.Sleep(10000); // Simulating passengers entering/leaving
+            ElevatorLog.Info($"Elevator {ElevatorID} has reached and stopped at floor {CurrentFloor}.");
+            Thread.Sleep(ElevatorConstants.PassengerDuration); // Simulating passengers entering/leaving
         }
-
     }
 }
 
-
+#region for reference
 // Move to the ground floor if idle and no pending requests
 //while (CurrentDirection == Direction.Idle && CurrentFloor != 0 && requests.Count == 0)
 //{
@@ -112,3 +119,4 @@ namespace Elevator.App
 //    CurrentDirection = Direction.Idle;
 //    Console.WriteLine($"Elevator {ElevatorID} is now at the ground floor.");
 //}
+#endregion

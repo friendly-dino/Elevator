@@ -13,6 +13,10 @@ namespace Elevator.App.Interface
         int CurrentFloor { get; }
         int NumberOfRequests {  get; }
         Direction CurrentDirection { get; }
+        /// <summary>
+        /// Adds the request to the elevator's internal blocking collection (requests) and logs the elevator assignment.
+        /// </summary>
+        /// <param name="request"></param>
         void AddRequest(RequestDetail request);
     }
 }
