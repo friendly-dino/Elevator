@@ -44,18 +44,15 @@ namespace Elevator.App
                         sameElevID = lastRequest.ElevatorID == request.ElevatorID;
 
                     if (lastRequest != null && sameElevID)//if request came from the same elevator, continue going to destination floor
-                    {
                         MoveToFloor(request.GotoFloor);
-                    }
                     else//this the default behavior
                     {
                         MoveToFloor(request.OriginFloor);
                         MoveToFloor(request.GotoFloor);
                     }
                     lock (lockObj)
-                    {
                         CurrentDirection = Direction.Idle;
-                    }
+
                     lastRequest = request;
                     ElevatorLog.Info(String.Format(ElevatorConstants.RequestComplete,ElevatorID, request.OriginFloor, request.GotoFloor));
                 }
