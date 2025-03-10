@@ -11,19 +11,19 @@ namespace Elevator.App.Controller
     {
         #region Constructor
         private readonly List<IElevator> _elevators;
-        private readonly ElevatorManager _elevatorManager;
+        private readonly IElevatorManager _elevatorManager;
         private readonly BlockingCollection<RequestDetail> _requests = [];
         private readonly int _maxFloors;
         private readonly object lockObj = new();
         public ElevatorController(int maxFloors, int numberOfElevators)
         {
             _maxFloors = maxFloors;
-            _elevators = new List<IElevator>();
+            _elevators = [];
 
             for (int i = 0; i < numberOfElevators; i++)
                 _elevators.Add(new Elevator(i + 1));
 
-            _elevatorManager = new ElevatorManager(_elevators);
+            _elevatorManager = new ElevatorManager(_elevators); ;
             Thread controllerThread = new(ProcessRequests);
             controllerThread.Start();
         }
