@@ -35,60 +35,59 @@ namespace Elevator.Tests
 
             Assert.That(_elevator.CurrentFloor, Is.EqualTo(5));
         }
+
         [Test]
         public void MoveToFloor_ShouldMoveUp()
         {
-            // Set initial floor
-            //_elevator.CurrentFloor = 5;
-            var currentFloorField = typeof(ElevatorApp.Elevator).GetField("CurrentFloor", BindingFlags.NonPublic | BindingFlags.Instance);
-            currentFloorField.SetValue(_elevator, 1);
+            var currentFloor = typeof(ElevatorApp.Elevator).GetProperty("CurrentFloor", BindingFlags.Public | BindingFlags.Instance);
+            currentFloor.SetValue(_elevator, 1);
             var targetFloor = 5;
 
             // Directly invoke the MoveToFloor method
             var moveToFloorMethod = typeof(ElevatorApp.Elevator).GetMethod("MoveToFloor", BindingFlags.NonPublic | BindingFlags.Instance);
             moveToFloorMethod.Invoke(_elevator, [targetFloor]);
 
-            // Verify the elevator moved down
-            Assert.That(_elevator.CurrentFloor, Is.EqualTo(targetFloor));
-            Assert.That(_elevator.CurrentDirection, Is.EqualTo(Direction.Idle));
+            Assert.Multiple(() =>
+            {
+                Assert.That(_elevator.CurrentFloor, Is.EqualTo(targetFloor));
+                Assert.That(_elevator.CurrentDirection, Is.EqualTo(Direction.GoUp));
+            });
         }
 
-        //[Test]
-        //public void MoveToFloor_ShouldNotMoveIfAlreadyAtTargetFloor()
-        //{
-        //    // Set initial floor
-        //    _elevator.CurrentFloor = 3;
-        //    var targetFloor = 3;
+        [Test]
+        public void MoveToFloor_ShouldMoveDown()
+        {
+            var currentFloor = typeof(ElevatorApp.Elevator).GetProperty("CurrentFloor", BindingFlags.Public | BindingFlags.Instance);
+            currentFloor.SetValue(_elevator, 10);
+            var targetFloor = 7;
 
-        //    // Directly invoke the MoveToFloor method
-        //    var moveToFloorMethod = typeof(ElevatorApp.Elevator).GetMethod("MoveToFloor", BindingFlags.NonPublic | BindingFlags.Instance);
-        //    moveToFloorMethod.Invoke(_elevator, new object[] { targetFloor });
+            // Directly invoke the MoveToFloor method
+            var moveToFloorMethod = typeof(ElevatorApp.Elevator).GetMethod("MoveToFloor", BindingFlags.NonPublic | BindingFlags.Instance);
+            moveToFloorMethod.Invoke(_elevator, [targetFloor]);
 
-        //    // Verify the elevator did not move
-        //    Assert.AreEqual(targetFloor, _elevator.CurrentFloor);
-        //    Assert.AreEqual(ElevatorApp.Direction.Idle, _elevator.CurrentDirection);
-        //}
+            Assert.Multiple(() =>
+            {
+                Assert.That(_elevator.CurrentFloor, Is.EqualTo(targetFloor));
+                Assert.That(_elevator.CurrentDirection, Is.EqualTo(Direction.GoDown));
+            });
+        }
 
-        //[Test]
-        //public void MoveToFloor_ShouldHandleMultipleMoves()
-        //{
-        //    // Set initial floor
-        //    _elevator.CurrentFloor = 1;
-        //    var targetFloor1 = 5;
-        //    var targetFloor2 = 2;
+        [Test]
+        public void MoveToFloor_ShouldNotMoveIfAlreadyAtTargetFloor()
+        {
+            // Set initial floor
+            var currentFloor = typeof(ElevatorApp.Elevator).GetProperty("CurrentFloor", BindingFlags.Public | BindingFlags.Instance);
+            currentFloor.SetValue(_elevator, 3);
+            var targetFloor = 3;
 
-        //    // Directly invoke the MoveToFloor method to move up
-        //    var moveToFloorMethod = typeof(ElevatorApp.Elevator).GetMethod("MoveToFloor", BindingFlags.NonPublic | BindingFlags.Instance);
-        //    moveToFloorMethod.Invoke(_elevator, new object[] { targetFloor1 });
+            // Directly invoke the MoveToFloor method
+            var moveToFloorMethod = typeof(ElevatorApp.Elevator).GetMethod("MoveToFloor", BindingFlags.NonPublic | BindingFlags.Instance);
+            moveToFloorMethod.Invoke(_elevator, new object[] { targetFloor });
 
-        //    // Verify the elevator moved up
-        //    Assert.AreEqual(targetFloor1, _elevator.CurrentFloor);
-
-        //    // Directly invoke the MoveToFloor method to move down
-        //    moveToFloorMethod.Invoke(_elevator, new object[] { targetFloor2 });
-
-        //    // Verify the elevator moved down
-        //    Assert.AreEqual(targetFloor2, _elevator.CurrentFloor);
-        //}
+            // Verify the elevator did not move
+            Assert.That(_elevator.CurrentFloor, Is.EqualTo(targetFloor));
+            Assert.That(_elevator.CurrentDirection, Is.EqualTo(Direction.Idle));
+            //Assert.AreEqual(ElevatorApp.Direction.Idle, _elevator.CurrentDirection);
+        }
     }
 }

@@ -83,10 +83,10 @@ namespace Elevator.App
                     }
                 }
                 ElevatorLog.Info($"Elevator {ElevatorID} {sDirection}: {CurrentFloor}F/{targetFloor}F.");
-                Thread.Sleep(ElevatorConstants.MoveDuration); // Simulating elevator movement between floors
+                Thread.Sleep(ElevatorConstants.MoveDuration); // Simulating elevator movement between floors 
             }
             ElevatorLog.Info($"Elevator {ElevatorID} has reached and stopped at floor {CurrentFloor}.");
-            Thread.Sleep(ElevatorConstants.PassengerDuration); // Simulating passengers entering/leaving
+            Thread.Sleep(ElevatorConstants.PassengerDuration); // Simulating passengers entering/leaving 
         }
     }
 }

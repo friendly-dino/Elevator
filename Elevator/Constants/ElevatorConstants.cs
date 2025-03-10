@@ -18,7 +18,7 @@ namespace Elevator.App.Constants
         public const string DirectionUp = "is going UP";
         public const string DirectionDown = "is going DOWN";
 
-        public const string RequestComplete = "Elevator {0} completed request: Source {1} -> Destination {2}";
+        public const string RequestComplete = "Elevator {0} completed request: From {1}F -> To {2}F";
         public const string ProcessRequestError = "Elevator {0} encountered an error.";
 
     }

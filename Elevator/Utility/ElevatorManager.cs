@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Elevator.App.Utility
 {
-    public class ElevatorManager
+    public class ElevatorManager : IElevatorManager
     {
         private readonly List<IElevator> _elevators;
         public ElevatorManager(List<IElevator> elevators) => _elevators = elevators;
