@@ -59,7 +59,6 @@ namespace Elevator.App.Utility
             }
             
         }
-        
         public void MoveToFloor(int targetFloor)
         {
             string sDirection = string.Empty;
