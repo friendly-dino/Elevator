@@ -5,18 +5,24 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Elevator.App.Constants;
 
 namespace Elevator.App.Utility
 {
     public class ElevatorManager : IElevatorManager
     {
         private readonly List<IElevator> _elevators;
+        private readonly int ElevatorID;
+        private readonly object lockObj = new();
+        public int CurrentFloor { get; private set; }
+        public Direction CurrentDirection { get; private set; }
         public ElevatorManager(List<IElevator> elevators) => _elevators = elevators;
-        /// <summary>
-        /// Gets the best possible elevator to be used based on certain parameters.
-        /// </summary>
-        /// <param name="requestedFloor">Number of the floor requested.</param>
-        /// <returns></returns>
+        public ElevatorManager(int elevatorId)
+        {
+            ElevatorID = elevatorId;
+            CurrentFloor = 1; // Assuming the elevator starts on the 1st floor
+            CurrentDirection = Direction.Idle;
+        }
         public IElevator FindBestElevator(int requestedFloor)
         {
             IElevator bestElevator = null;
@@ -52,6 +58,33 @@ namespace Elevator.App.Utility
                 throw;
             }
             
+        }
+        
+        public void MoveToFloor(int targetFloor)
+        {
+            string sDirection = string.Empty;
+            while (CurrentFloor != targetFloor)
+            {
+                lock (lockObj)
+                {
+                    if (CurrentFloor < targetFloor)
+                    {
+                        CurrentFloor++;
+                        CurrentDirection = Direction.GoUp;
+                        sDirection = ElevatorConstants.DirectionUp;
+                    }
+                    else
+                    {
+                        CurrentFloor--;
+                        CurrentDirection = Direction.GoDown;
+                        sDirection = ElevatorConstants.DirectionDown;
+                    }
+                }
+                ElevatorLog.Info($"Elevator {ElevatorID} {sDirection}: {CurrentFloor}F/{targetFloor}F.");
+                Thread.Sleep(ElevatorConstants.MoveDuration); // Simulating elevator movement between floors 
+            }
+            ElevatorLog.Info($"Elevator {ElevatorID} has reached and stopped at floor {CurrentFloor}.");
+            Thread.Sleep(ElevatorConstants.PassengerDuration); // Simulating passengers entering/leaving 
         }
         /// <summary>
         /// Checks for the current direction of the elevator if it is going to the requested floor.

@@ -15,6 +15,7 @@ namespace Elevator.App
         public int NumberOfRequests => requests.Count;
         public Direction CurrentDirection { get; private set; } = Direction.Idle;
         public IEnumerable<RequestDetail> Requests => requests; //for tests
+        private readonly IElevatorManager _elevatorManager;
         private readonly BlockingCollection<RequestDetail> requests = [];
         private readonly object lockObj = new();
         public Elevator(int id)
@@ -22,6 +23,7 @@ namespace Elevator.App
             ElevatorID = id;
             Thread elevatorThread = new(ProcessRequests);
             elevatorThread.Start();
+            _elevatorManager = new ElevatorManager(ElevatorID);
         }
         #endregion
         public void AddRequest(RequestDetail request)
@@ -44,11 +46,11 @@ namespace Elevator.App
                         sameElevID = lastRequest.ElevatorID == request.ElevatorID;
 
                     if (lastRequest != null && sameElevID)//if request came from the same elevator, continue going to destination floor
-                        MoveToFloor(request.GotoFloor);
+                        _elevatorManager.MoveToFloor(request.GotoFloor);//MoveToFloor(request.GotoFloor);
                     else//this the default behavior
                     {
-                        MoveToFloor(request.OriginFloor);
-                        MoveToFloor(request.GotoFloor);
+                        _elevatorManager.MoveToFloor(request.OriginFloor);//MoveToFloor(request.OriginFloor);
+                        _elevatorManager.MoveToFloor(request.GotoFloor);//MoveToFloor(request.GotoFloor);
                     }
                     lock (lockObj)
                         CurrentDirection = Direction.Idle;
@@ -61,32 +63,6 @@ namespace Elevator.App
                     throw new ElevatorProcessRequestException(string.Format(ElevatorConstants.ProcessRequestError, ElevatorID));
                 }
             }
-        }
-        private void MoveToFloor(int targetFloor)
-        {
-            string sDirection = string.Empty;
-            while (CurrentFloor != targetFloor)
-            {
-                lock (lockObj)
-                {
-                    if (CurrentFloor < targetFloor)
-                    {
-                        CurrentFloor++;
-                        CurrentDirection = Direction.GoUp;
-                        sDirection = ElevatorConstants.DirectionUp;
-                    }
-                    else
-                    {
-                        CurrentFloor--;
-                        CurrentDirection = Direction.GoDown;
-                        sDirection = ElevatorConstants.DirectionDown;
-                    }
-                }
-                ElevatorLog.Info($"Elevator {ElevatorID} {sDirection}: {CurrentFloor}F/{targetFloor}F.");
-                Thread.Sleep(ElevatorConstants.MoveDuration); // Simulating elevator movement between floors 
-            }
-            ElevatorLog.Info($"Elevator {ElevatorID} has reached and stopped at floor {CurrentFloor}.");
-            Thread.Sleep(ElevatorConstants.PassengerDuration); // Simulating passengers entering/leaving 
         }
     }
 }
