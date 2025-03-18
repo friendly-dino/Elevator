@@ -15,7 +15,7 @@ namespace Elevator.Tests
         [SetUp]
         public void SetUp()
         {
-            _elevator = new ElevatorApp.Elevator(1); 
+            _elevator = new ElevatorApp.Elevator(1,false); //temporarily disable threading so we can test the adding of request
         }
 
         [Test]
@@ -23,8 +23,7 @@ namespace Elevator.Tests
         {
             var request = new RequestDetail(1, 5);
             _elevator.AddRequest(request);
-
-            // temporary turn off threading to pass
+                       
             Assert.That(_elevator.Requests.ToList(), Does.Contain(request));
         }
     }

@@ -18,11 +18,14 @@ namespace Elevator.App
         private readonly IElevatorManager _elevatorManager;
         private readonly BlockingCollection<RequestDetail> requests = [];
         private readonly object lockObj = new();
-        public Elevator(int id)
+        public Elevator(int id, bool startThread = true)
         {
             ElevatorID = id;
-            Thread elevatorThread = new(ProcessRequests);
-            elevatorThread.Start();
+            if (startThread)
+            {
+                Thread elevatorThread = new(ProcessRequests);
+                elevatorThread.Start();
+            }
             _elevatorManager = new ElevatorManager(ElevatorID);
         }
         #endregion

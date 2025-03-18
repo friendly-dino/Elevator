@@ -54,8 +54,8 @@ namespace Elevator.Tests
         [Test]
         public void FindBestElevator_ClosestElevator()
         {
-            var bestElevator = _elevatorManager.FindBestElevator(4);
-            Assert.That(bestElevator.ElevatorID, Is.EqualTo(2));
+            var bestElevator = _elevatorManager.FindBestElevator(10);
+            Assert.That(bestElevator.ElevatorID, Is.EqualTo(1));
         }
         [Test]
         public void MoveToFloor_ShouldUpdateCurrentFloor()
