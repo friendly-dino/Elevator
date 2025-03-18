@@ -49,11 +49,11 @@ namespace Elevator.App
                         sameElevID = lastRequest.ElevatorID == request.ElevatorID;
 
                     if (lastRequest != null && sameElevID)//if request came from the same elevator, continue going to destination floor
-                        _elevatorManager.MoveToFloor(request.GotoFloor);//MoveToFloor(request.GotoFloor);
+                        _elevatorManager.MoveToFloor(request.GotoFloor);
                     else//this the default behavior
                     {
-                        _elevatorManager.MoveToFloor(request.OriginFloor);//MoveToFloor(request.OriginFloor);
-                        _elevatorManager.MoveToFloor(request.GotoFloor);//MoveToFloor(request.GotoFloor);
+                        _elevatorManager.MoveToFloor(request.OriginFloor);
+                        _elevatorManager.MoveToFloor(request.GotoFloor);
                     }
                     lock (lockObj)
                         CurrentDirection = Direction.Idle;
