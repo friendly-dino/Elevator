@@ -10,6 +10,7 @@ namespace Elevator.App
     public class Elevator : IElevator
     {
         #region Constructor
+        public int CurrentDestination { get; private set; } = 1;
         public int ElevatorID { get; }
         public int CurrentFloor { get; private set; } = 1;
         public int NumberOfRequests => requests.Count;
@@ -18,12 +19,13 @@ namespace Elevator.App
         private readonly IElevatorManager _elevatorManager;
         private readonly BlockingCollection<RequestDetail> requests = [];
         private readonly object lockObj = new();
+        private Thread elevatorThread;
         public Elevator(int id, bool startThread = true)
         {
             ElevatorID = id;
             if (startThread)
             {
-                Thread elevatorThread = new(ProcessRequests);
+                elevatorThread = new(ProcessRequests);
                 elevatorThread.Start();
             }
             _elevatorManager = new ElevatorManager(ElevatorID);
@@ -33,7 +35,12 @@ namespace Elevator.App
         {
             lock (lockObj)
                 requests.Add(request);
-            ElevatorLog.Info($"Request assigned to Elevator {ElevatorID}: From {request.OriginFloor}F -> Going to {request.GotoFloor}F");
+            ElevatorLog.Info($"Request assigned to Elevator {ElevatorID}: From {CurrentDestination}F -> Going to {request.GotoFloor}F");
+        }
+        public void WaitForCompletion()
+        {
+            if (elevatorThread != null && elevatorThread.IsAlive)
+                elevatorThread.Join(); // Wait for the thread to complete
         }
         [LogException]
         private void ProcessRequests()
@@ -44,17 +51,53 @@ namespace Elevator.App
             {
                 try
                 {
-                    bool sameElevID = false;
-                    if (request.ElevatorID.HasValue && lastRequest != null) //check value to avoid error
-                        sameElevID = lastRequest.ElevatorID == request.ElevatorID;
+                        request.OriginFloor = CurrentDestination;
 
-                    if (lastRequest != null && sameElevID)//if request came from the same elevator, continue going to destination floor
-                        _elevatorManager.MoveToFloor(request.GotoFloor);
-                    else//this the default behavior
+                    _elevatorManager.MoveToFloor(request.GotoFloor);
+
+                    CurrentDestination = request.GotoFloor;
+                    Console.WriteLine($"Elevator {ElevatorID} has reached {CurrentDestination}F [{CurrentDirection}]. Please enter your destination floor:");
+
+
+                    string? inputFloors = Console.ReadLine();
+                    if (!string.IsNullOrEmpty(inputFloors))
                     {
-                        _elevatorManager.MoveToFloor(request.OriginFloor);
-                        _elevatorManager.MoveToFloor(request.GotoFloor);
+                        try
+                        {
+                            if (inputFloors.Equals("0"))//use 0 as way to simulate no new request when the elevator reached requested floor
+                            {
+                                continue;
+                            }
+                            int[] floors = inputFloors.Split(',')
+                                                      .Select(floor => int.Parse(floor.Trim()))
+                                                      .ToArray();
+                            foreach (int floor in floors) 
+                            {
+                                AddRequest(new RequestDetail(request.OriginFloor, floor, ElevatorID));
+                            }
+                           
+                        }
+                        catch (FormatException)
+                        {
+                            Console.WriteLine("Invalid input format. Please enter numbers separated by commas (e.g., 1,2,4).");
+                        }
                     }
+
+                    //string? destinationInput = Console.ReadLine();
+
+                    //if (int.TryParse(destinationInput, out int destinationFloor))
+                    //{
+                    //    if (destinationFloor >= 1 && destinationFloor <= ElevatorConstants.MaxFloors)
+                    //    {
+                    //        // Add the new destination as a request
+                    //        AddRequest(new RequestDetail(PreviousDestination, destinationFloor, ElevatorID));
+                    //    }
+                    //    else
+                    //    {
+                    //        Console.WriteLine("Invalid destination floor entered.");
+                    //    }
+                    //}
+                    //_elevatorManager.MoveToFloor(request.GotoFloor);
                     lock (lockObj)
                         CurrentDirection = Direction.Idle;
 

@@ -23,7 +23,7 @@ namespace Elevator.App.Utility
             CurrentFloor = 1; // Assuming the elevator starts on the 1st floor
             CurrentDirection = Direction.Idle;
         }
-        public IElevator FindBestElevator(int requestedFloor)
+        public IElevator FindBestElevator(int requestedFloor, Direction requestedDirection)
         {
             IElevator bestElevator = null;
             int closestDistance = int.MaxValue;
@@ -33,7 +33,7 @@ namespace Elevator.App.Utility
                 foreach (var elevator in _elevators)
                 {
                     int distance = Math.Abs(elevator.CurrentFloor - requestedFloor);
-                    bool isGoingToReqFlr = IsGoingTo(elevator, requestedFloor);
+                    bool isGoingToReqFlr = IsGoingTo(elevator, requestedFloor, requestedDirection);
 
                     // if perfect match is found,return immediately, no need for further checks
                     if (elevator.CurrentFloor == requestedFloor && elevator.CurrentDirection == Direction.Idle)
@@ -88,10 +88,10 @@ namespace Elevator.App.Utility
         /// <summary>
         /// Checks for the current direction of the elevator if it is going to the requested floor.
         /// </summary>
-        private static bool IsGoingTo(IElevator elevator, int requestedFloor)
+        private static bool IsGoingTo(IElevator elevator, int requestedFloor,Direction requestedDirection)
         {
-            return elevator.CurrentDirection == Direction.GoUp && elevator.CurrentFloor < requestedFloor ||
-                   elevator.CurrentDirection == Direction.GoDown && elevator.CurrentFloor > requestedFloor ||
+            return elevator.CurrentDirection == requestedDirection && elevator.CurrentFloor < requestedFloor ||
+                   elevator.CurrentDirection == requestedDirection && elevator.CurrentFloor > requestedFloor ||
                    elevator.CurrentDirection == Direction.Idle;
         }
     }

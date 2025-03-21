@@ -10,7 +10,7 @@ namespace Elevator.App.Controller
     public class ElevatorController : IElevatorController
     {
         #region Constructor
-        private readonly List<IElevator> _elevators;
+        public readonly List<IElevator> _elevators;
         private readonly IElevatorManager _elevatorManager;
         private readonly BlockingCollection<RequestDetail> _requests = [];
         private readonly int _maxFloors;
@@ -31,7 +31,7 @@ namespace Elevator.App.Controller
         [LogException]
         public void AddRequest(RequestDetail request)
         {
-            if (request.OriginFloor > _maxFloors || request.GotoFloor > _maxFloors || request.OriginFloor < 1 || request.GotoFloor < 1)
+            if ( request.GotoFloor > _maxFloors || request.GotoFloor < 1)
                 throw new InvalidRequestException(ElevatorConstants.InvalidReqMsg);
 
             lock (lockObj)
@@ -54,7 +54,7 @@ namespace Elevator.App.Controller
         {
             return request.ElevatorID.HasValue
                 ? _elevators.FirstOrDefault(e => e.ElevatorID == request.ElevatorID.Value)
-                : _elevatorManager.FindBestElevator(request.OriginFloor);
+                : _elevatorManager.FindBestElevator(request.OriginFloor,request.DirectionRequest);
         }
     }
 

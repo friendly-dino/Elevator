@@ -14,7 +14,7 @@ namespace Elevator.App.Interface
         /// </summary>
         /// <param name="requestedFloor">Number of the floor requested.</param>
         /// <returns>Elevator object containing the elevator ID.</returns>
-        IElevator FindBestElevator(int requestedFloor);
+        IElevator FindBestElevator(int requestedFloor,Direction requestedDirection);
         /// <summary>
         /// Indicates whether the elevator would go up or down.
         /// </summary>
