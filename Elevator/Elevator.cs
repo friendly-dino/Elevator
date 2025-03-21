@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using Elevator.App.Constants;
 using Elevator.App.Utility;
 using Elevator.App.Exceptions;
+using System.Threading.Channels;
 
 namespace Elevator.App
 {
@@ -13,104 +14,97 @@ namespace Elevator.App
         public int CurrentDestination { get; private set; } = 1;
         public int ElevatorID { get; }
         public int CurrentFloor { get; private set; } = 1;
-        public int NumberOfRequests => requests.Count;
+        public int NumberOfRequests => _elevatorRequests.Count;
         public Direction CurrentDirection { get; private set; } = Direction.Idle;
-        public IEnumerable<RequestDetail> Requests => requests; //for tests
+        public IEnumerable<RequestDetail> Requests => _elevatorRequests; //for tests
         private readonly IElevatorManager _elevatorManager;
-        private readonly BlockingCollection<RequestDetail> requests = [];
         private readonly object lockObj = new();
-        private Thread elevatorThread;
-        public Elevator(int id, bool startThread = true)
+        private readonly Task _elevatorTask;
+        private readonly CancellationTokenSource _cancellationTokenSource = new();
+        private readonly SortedSet<RequestDetail> _elevatorRequests = new(new RequestComparer());
+        public Elevator(int id, bool startTask = true)
         {
             ElevatorID = id;
-            if (startThread)
-            {
-                elevatorThread = new(ProcessRequests);
-                elevatorThread.Start();
-            }
+            if (startTask)
+                _elevatorTask = ProcessRequestsAsync(_cancellationTokenSource.Token);
             _elevatorManager = new ElevatorManager(ElevatorID);
         }
         #endregion
         public void AddRequest(RequestDetail request)
         {
             lock (lockObj)
-                requests.Add(request);
+                _elevatorRequests.Add(request);
             ElevatorLog.Info($"Request assigned to Elevator {ElevatorID}: From {CurrentDestination}F -> Going to {request.GotoFloor}F");
         }
-        public void WaitForCompletion()
+        public async Task WaitForCompletion()
         {
-            if (elevatorThread != null && elevatorThread.IsAlive)
-                elevatorThread.Join(); // Wait for the thread to complete
+            try
+            {
+                if (_elevatorTask != null)
+                    await _elevatorTask; // Await the task to complete
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine($"Elevator {ElevatorID} task was canceled.");
+            }
         }
         [LogException]
-        private void ProcessRequests()
-        {
-            //notes: can add batch processing for advanced handling of requests ie same directions etc
-            RequestDetail lastRequest = null;
-            foreach (var request in requests.GetConsumingEnumerable())
+        private async Task ProcessRequestsAsync(CancellationToken cancellationToken)
             {
-                try
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                        request.OriginFloor = CurrentDestination;
-
-                    _elevatorManager.MoveToFloor(request.GotoFloor);
-
-                    CurrentDestination = request.GotoFloor;
-                    Console.WriteLine($"Elevator {ElevatorID} has reached {CurrentDestination}F [{CurrentDirection}]. Please enter your destination floor:");
-
-
-                    string? inputFloors = Console.ReadLine();
-                    if (!string.IsNullOrEmpty(inputFloors))
+                    RequestDetail? nextRequest = null;
+                    lock (lockObj)
+                    {
+                        if (_elevatorRequests.Count > 0)
+                        {
+                            nextRequest = _elevatorRequests.Min; // Retrieve the smallest request
+                            _elevatorRequests.Remove(nextRequest); // Remove it after retrieving
+                        }
+                    }
+                    if (nextRequest != null)
                     {
                         try
                         {
-                            if (inputFloors.Equals("0"))//use 0 as way to simulate no new request when the elevator reached requested floor
+                            // Process the request
+                            nextRequest.OriginFloor = CurrentDestination;
+                            _elevatorManager.MoveToFloor(nextRequest.GotoFloor);
+
+                            CurrentDestination = nextRequest.GotoFloor;
+                            CurrentDirection = nextRequest.DirectionRequest;
+
+                            Console.WriteLine($"Elevator {ElevatorID} has reached {CurrentDestination}F [{CurrentDirection}]. Please enter your destination floor:");
+                            string? inputFloors = Console.ReadLine();
+                            if (!string.IsNullOrEmpty(inputFloors))
                             {
-                                continue;
+                                try
+                                {
+                                    if (inputFloors.Equals("0")) // Simulate no new requests with "0"
+                                        continue;
+
+                                    int[] floors = inputFloors.Split(',').Select(floor => int.Parse(floor.Trim())).ToArray();
+                                    foreach (int floor in floors)
+                                        AddRequest(new RequestDetail(nextRequest.OriginFloor, floor, ElevatorID));
+                                }
+                                catch (FormatException)
+                                {
+                                    throw new FormatException("Invalid input format. Only accepts a number or comma-separated numbers (e.g., 1,2,4).");
+                                }
                             }
-                            int[] floors = inputFloors.Split(',')
-                                                      .Select(floor => int.Parse(floor.Trim()))
-                                                      .ToArray();
-                            foreach (int floor in floors) 
-                            {
-                                AddRequest(new RequestDetail(request.OriginFloor, floor, ElevatorID));
-                            }
-                           
                         }
-                        catch (FormatException)
+                        catch (Exception ex)
                         {
-                            Console.WriteLine("Invalid input format. Please enter numbers separated by commas (e.g., 1,2,4).");
+                            Console.WriteLine($"Error processing request in Elevator {ElevatorID}: {ex.Message}");
                         }
                     }
-
-                    //string? destinationInput = Console.ReadLine();
-
-                    //if (int.TryParse(destinationInput, out int destinationFloor))
-                    //{
-                    //    if (destinationFloor >= 1 && destinationFloor <= ElevatorConstants.MaxFloors)
-                    //    {
-                    //        // Add the new destination as a request
-                    //        AddRequest(new RequestDetail(PreviousDestination, destinationFloor, ElevatorID));
-                    //    }
-                    //    else
-                    //    {
-                    //        Console.WriteLine("Invalid destination floor entered.");
-                    //    }
-                    //}
-                    //_elevatorManager.MoveToFloor(request.GotoFloor);
-                    lock (lockObj)
-                        CurrentDirection = Direction.Idle;
-
-                    lastRequest = request;
-                    ElevatorLog.Info(String.Format(ElevatorConstants.RequestComplete,ElevatorID, request.OriginFloor, request.GotoFloor));
-                }
-                catch (Exception)
-                {
-                    throw new ElevatorProcessRequestException(string.Format(ElevatorConstants.ProcessRequestError, ElevatorID));
+                    else
+                    {
+                        // Idle delay when no requests are pending
+                        await Task.Delay(500, cancellationToken);
+                    }
                 }
             }
         }
-    }
 }
 
 #region for reference
