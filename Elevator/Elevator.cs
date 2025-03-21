@@ -15,19 +15,21 @@ namespace Elevator.App
         public int ElevatorID { get; }
         public int CurrentFloor { get; private set; } = 1;
         public int NumberOfRequests => _elevatorRequests.Count;
-        public Direction CurrentDirection { get; private set; } = Direction.Idle;
+        public Direction CurrentDirection { get;  private set; } = Direction.Idle;
         public IEnumerable<RequestDetail> Requests => _elevatorRequests; //for tests
         private readonly IElevatorManager _elevatorManager;
         private readonly object lockObj = new();
+        private static readonly object InputLock = new();
         private readonly Task _elevatorTask;
         private readonly CancellationTokenSource _cancellationTokenSource = new();
-        private readonly SortedSet<RequestDetail> _elevatorRequests = new(new RequestComparer());
+        private SortedSet<RequestDetail> _elevatorRequests = new(new RequestComparer(Direction.Idle));
         public Elevator(int id, bool startTask = true)
         {
             ElevatorID = id;
             if (startTask)
                 _elevatorTask = ProcessRequestsAsync(_cancellationTokenSource.Token);
             _elevatorManager = new ElevatorManager(ElevatorID);
+            //_elevatorRequests = new SortedSet<RequestDetail>(new RequestComparer(CurrentDirection));
         }
         #endregion
         public void AddRequest(RequestDetail request)
@@ -46,6 +48,14 @@ namespace Elevator.App
             catch (OperationCanceledException)
             {
                 Console.WriteLine($"Elevator {ElevatorID} task was canceled.");
+            }
+        }
+        private void UpdateComparer()
+        {
+            lock (lockObj)
+            {
+                var updatedRequests = new SortedSet<RequestDetail>(_elevatorRequests, new RequestComparer(CurrentDirection));
+                _elevatorRequests = updatedRequests;
             }
         }
         [LogException]
@@ -73,25 +83,38 @@ namespace Elevator.App
                             CurrentDestination = nextRequest.GotoFloor;
                             CurrentDirection = nextRequest.DirectionRequest;
 
-                            Console.WriteLine($"Elevator {ElevatorID} has reached {CurrentDestination}F [{CurrentDirection}]. Please enter your destination floor:");
-                            string? inputFloors = Console.ReadLine();
-                            if (!string.IsNullOrEmpty(inputFloors))
-                            {
-                                try
-                                {
-                                    if (inputFloors.Equals("0")) // Simulate no new requests with "0"
-                                        continue;
+                            //Console.WriteLine($"Elevator {ElevatorID} has reached {CurrentDestination}F [{CurrentDirection}]. Please enter your destination floor:");
+                            //string? inputFloors = Console.ReadLine();
 
-                                    int[] floors = inputFloors.Split(',').Select(floor => int.Parse(floor.Trim())).ToArray();
-                                    foreach (int floor in floors)
-                                        AddRequest(new RequestDetail(nextRequest.OriginFloor, floor, ElevatorID));
-                                }
-                                catch (FormatException)
+                            string? inputFloors;
+                            lock (InputLock) // Ensure only one thread prompts at a time
+                            {
+                                Console.WriteLine($"Elevator {ElevatorID} has reached {CurrentDestination}F [{CurrentDirection}]. Please enter your destination floor:");
+                                inputFloors = Console.ReadLine();
+                            }
+
+                            if (!string.IsNullOrEmpty(inputFloors))
                                 {
-                                    throw new FormatException("Invalid input format. Only accepts a number or comma-separated numbers (e.g., 1,2,4).");
+                                    try
+                                    {
+                                        if (inputFloors.Equals("0")) continue; // Simulate no new requests with "0"
+
+                                        int[] floors = inputFloors.Split(',').Select(floor => int.Parse(floor.Trim())).ToArray();
+
+                                        foreach (int floor in floors)
+                                        {
+                                            CurrentDirection = (floor > CurrentDestination) ? Direction.GoUp : Direction.GoDown;
+                                            UpdateComparer();
+                                            //AddRequest(new RequestDetail(nextRequest.OriginFloor, floor, ElevatorID));
+                                            AddRequest(new RequestDetail(floor, CurrentDirection, ElevatorID));
+                                        }    
+                                    }
+                                    catch (FormatException)
+                                    {
+                                        throw new FormatException("Invalid input format. Only accepts a number or comma-separated numbers (e.g., 1,2,4).");
+                                    }
                                 }
                             }
-                        }
                         catch (Exception ex)
                         {
                             Console.WriteLine($"Error processing request in Elevator {ElevatorID}: {ex.Message}");
