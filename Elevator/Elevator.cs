@@ -43,7 +43,6 @@ namespace Elevator.App
         {
             lock (lockObj)
                 _elevatorRequests.Add(request);
-            Console.SetWindowSize(80, 60);
             ElevatorLog.Info($"Request assigned to Elevator {ElevatorID}: From {CurrentDestination}F -> Going to {request.GotoFloor}F");
         }
         public async Task WaitForCompletion()
