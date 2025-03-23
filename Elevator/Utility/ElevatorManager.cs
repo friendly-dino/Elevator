@@ -1,10 +1,6 @@
 ﻿using Elevator.Enum;
 using Elevator.App.Interface;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Elevator.App.Exceptions;
 using Elevator.App.Constants;
 
 namespace Elevator.App.Utility
@@ -36,7 +32,7 @@ namespace Elevator.App.Utility
                     bool isGoingToReqFlr = IsGoingTo(elevator, requestedFloor, requestedDirection);
 
                     // if perfect match is found,return immediately, no need for further checks
-                    if (elevator.CurrentFloor == requestedFloor && elevator.CurrentDirection == Direction.Idle)
+                    if (elevator.CurrentFloor == requestedFloor && elevator.CurrentDirection == requestedDirection)
                         return elevator;
 
                     if (isGoingToReqFlr && (distance <= closestDistance && elevator.NumberOfRequests <= fewestReqCount))
@@ -53,9 +49,9 @@ namespace Elevator.App.Utility
                 }
                 return bestElevator;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                throw new ElevatorNotAvailableException(String.Format(ElevatorConstants.ElevetorUnavailable,ex.Message));
             }
             
         }
@@ -82,8 +78,86 @@ namespace Elevator.App.Utility
                 ElevatorLog.Info($"Elevator {ElevatorID} {sDirection}: {CurrentFloor}F/{targetFloor}F.");
                 Thread.Sleep(ElevatorConstants.MoveDuration); // Simulating elevator movement between floors 
             }
-            ElevatorLog.Info($"Elevator {ElevatorID} has reached and stopped at floor {CurrentFloor}.");
-            Thread.Sleep(ElevatorConstants.PassengerDuration); // Simulating passengers entering/leaving 
+            if (CurrentFloor == 1) //override direction when in 1F
+            {
+                CurrentDirection = Direction.GoUp;
+            }
+            //Thread.Sleep(ElevatorConstants.PassengerDuration); // Simulating passengers entering/leaving 
+        }
+        public int[] SortFloors(string inputFloors, int currentFloor, Direction direction)
+        {
+            // Split the floors into two parts
+            int[] floors = inputFloors.Split(',').Select(floor => int.Parse(floor.Trim())).ToArray();
+            var higher = floors.Where(f => f > currentFloor).OrderBy(f => f).ToArray();
+            var lower = floors.Where(f => f < currentFloor).OrderByDescending(f => f).ToArray();
+
+            if (direction == Direction.GoUp)
+                return higher.Concat(lower).ToArray();
+            else if (direction == Direction.GoDown)
+                return lower.Concat(higher).ToArray();
+            else
+                throw new ArgumentException("Invalid direction. Use 'up' or 'down'.");
+        }
+        public int GetInsertPosition(RequestDetail newRequest, Direction currentDirection, int currentFloor, List<RequestDetail> requests)
+        {
+            var insertPos = 0;
+            bool isNewFloorInCurrentDirection = IsFloorInCurrentDirection(newRequest.GotoFloor, currentDirection, currentFloor);
+            bool passedCurrentGroup = false;
+
+            while (insertPos < requests.Count)
+            {
+                int currentFloorInList = requests[insertPos].GotoFloor;
+                bool isExistingFloorInCurrentDirection = IsFloorInCurrentDirection(currentFloorInList, currentDirection, currentFloor);
+
+                if (isNewFloorInCurrentDirection &&
+                    HandleCurrentGroup(newRequest.GotoFloor, currentFloorInList, currentDirection, !isExistingFloorInCurrentDirection))
+                    break;
+
+                if (!isNewFloorInCurrentDirection &&
+                    HandleOppositeGroup(currentFloorInList, isExistingFloorInCurrentDirection, ref passedCurrentGroup, currentDirection, currentFloor, newRequest.GotoFloor))
+                    break;
+                //if (isNewFloorInCurrentDirection)
+                //{
+                //    if (!isExistingFloorInCurrentDirection)
+                //    {
+                //        // Found first opposite group element, insert here
+                //        break;
+                //    }
+
+                //    // Stay within current group
+                //    if (currentDirection == Direction.GoUp)
+                //    {
+                //        if (current > newRequest.GotoFloor) break;
+                //    }
+                //    else
+                //    {
+                //        if (current < newRequest.GotoFloor) break;
+                //    }
+                //}
+                //else
+                //{
+                //    if (!passedCurrentGroup)
+                //    {
+                //        if (isExistingFloorInCurrentDirection)
+                //        {
+                //            insertPos++;
+                //            continue;
+                //        }
+                //        passedCurrentGroup = true;
+                //    }
+
+                //    if (currentDirection == Direction.GoUp)
+                //    {
+                //        if (current < newRequest.GotoFloor) break;
+                //    }
+                //    else
+                //    {
+                //        if (current > newRequest.GotoFloor) break;
+                //    }
+                //}
+                insertPos++;
+            }
+            return insertPos;
         }
         /// <summary>
         /// Checks for the current direction of the elevator if it is going to the requested floor.
@@ -93,6 +167,35 @@ namespace Elevator.App.Utility
             return elevator.CurrentDirection == requestedDirection && elevator.CurrentFloor < requestedFloor ||
                    elevator.CurrentDirection == requestedDirection && elevator.CurrentFloor > requestedFloor ||
                    elevator.CurrentDirection == Direction.Idle;
+        }
+        private static bool IsFloorInCurrentDirection(int floor, Direction currentDirection, int currentFloor) =>
+            currentDirection == Direction.GoUp ? floor >= currentFloor : floor <= currentFloor;
+        private static bool HandleCurrentGroup(int newGotoFloor, int currentFloorInList, Direction currentDirection, bool isOppositeGroupFound)
+        {
+            if (isOppositeGroupFound) return true;
+
+            if (currentDirection == Direction.GoUp && currentFloorInList > newGotoFloor) return true;
+            if (currentDirection == Direction.GoDown && currentFloorInList < newGotoFloor) return true;
+
+            return false;
+        }
+        private static bool HandleOppositeGroup(
+            int currentFloorInList,
+            bool isExistingFloorInCurrentDirection,
+            ref bool passedCurrentGroup,
+            Direction currentDirection,
+            int currentFloor,
+            int newGotoFloor)
+        {
+            if (!passedCurrentGroup && isExistingFloorInCurrentDirection)
+                return false;
+
+            passedCurrentGroup = true;
+
+            if (currentDirection == Direction.GoUp && currentFloorInList < newGotoFloor) return true;
+            if (currentDirection == Direction.GoDown && currentFloorInList > newGotoFloor) return true;
+
+            return false;
         }
     }
 }

@@ -18,4 +18,8 @@ namespace Elevator.App.Exceptions
     {
         public ElevatorProcessRequestException(string message) : base(message) { }
     }
+    public class ElevatorNotAvailableException : Exception
+    {
+        public ElevatorNotAvailableException(string message) : base(message) { }
+    }
 }
