@@ -1,14 +1,8 @@
 ﻿using Elevator.Enum;
 using Elevator.App.Interface;
-using System.Collections.Concurrent;
 using Elevator.App.Constants;
 using Elevator.App.Utility;
 using Elevator.App.Exceptions;
-using System.Threading.Channels;
-using System.Diagnostics;
-using System.Drawing;
-using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace Elevator.App
 {
@@ -61,6 +55,7 @@ namespace Elevator.App
             {
                 var inputFloorDirection = (floor > currentFloor) ? Direction.GoUp : Direction.GoDown;
                 var newRequest = new RequestDetail(floor, inputFloorDirection, ElevatorID);
+
                 if (requests.Contains(newRequest)) continue;
                 var index = _elevatorManager.GetInsertPosition(newRequest, currentDirection, currentFloor, requests);
                 requests.Insert(index, newRequest);
@@ -88,20 +83,23 @@ namespace Elevator.App
                                 _elevatorManager.MoveToFloor(request.GotoFloor);
 
                                 CurrentDestination = request.GotoFloor;
+                                CurrentFloor = CurrentDestination;
                                 CurrentDirection = request.DirectionRequest;
 
                                 //use this for continuos logging even for multiple input prompt----------------------------------------------------------------------------
+                                //but this is less readable since i only use one console window
+                                //
                                 //Console.WriteLine($"Elevator {ElevatorID} has reached {CurrentDestination}F [{CurrentDirection}]. Please enter your destination floor:");
                                 //string? inputFloors = Console.ReadLine();
+                                //
                                 //end--------------------------------------------------------------------------------------------------------------------------------------
 
                                 string? inputFloors;
                                 lock (InputLock) // Ensure only one prompt at a time
                                 {
-                                    Console.WriteLine($"Elevator {ElevatorID} has reached {CurrentDestination}F [{CurrentDirection}]. Please enter your destination floor:");
-                                    inputFloors = Console.ReadLine();
+                                        Console.WriteLine($"Elevator {ElevatorID} has reached {CurrentDestination}F [{GetCurrentDirection()}]. Please enter your destination floor:");
+                                        inputFloors = Console.ReadLine();
                                 }
-
                                 if (!string.IsNullOrEmpty(inputFloors))
                                 {
                                     try
@@ -136,6 +134,14 @@ namespace Elevator.App
                 }
                     
             }
+        }
+        private Direction GetCurrentDirection() 
+        {
+            if (CurrentFloor == 1)
+                CurrentDirection = Direction.GoUp;
+            if (CurrentFloor == ElevatorConstants.MaxFloors)
+                CurrentDirection = Direction.GoDown;
+            return CurrentDirection;
         }
     }
 }

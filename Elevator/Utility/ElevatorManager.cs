@@ -75,11 +75,10 @@ namespace Elevator.App.Utility
                         sDirection = ElevatorConstants.DirectionDown;
                     }
                 }
+
                 ElevatorLog.Info($"Elevator {ElevatorID} {sDirection}: {CurrentFloor}F/{targetFloor}F.");
                 Thread.Sleep(ElevatorConstants.MoveDuration); // Simulating elevator movement between floors 
             }
-            if (CurrentFloor == 1) //override direction when in 1F
-                CurrentDirection = Direction.GoUp;
             Thread.Sleep(ElevatorConstants.PassengerDuration); // Simulating passengers entering/leaving 
         }
         public int GetInsertPosition(RequestDetail newRequest, Direction currentDirection, int currentFloor, List<RequestDetail> requests)

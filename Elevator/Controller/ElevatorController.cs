@@ -59,13 +59,16 @@ namespace Elevator.App.Controller
                     {
                         IElevator? bestElevator = GetBestElevatorForRequest(nextRequest);
                         if (bestElevator != null)
+                        {
+                            nextRequest.ElevatorID = bestElevator.ElevatorID;
                             bestElevator.AddRequest(nextRequest);
+                        }
                         else
-                            Console.WriteLine("No available elevator for this request.");
+                            ElevatorLog.Info(ElevatorConstants.NoElevatorMsg);
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Error processing request: {ex.Message}");
+                        throw new ElevatorProcessRequestException(String.Format(ElevatorConstants.ProcessRequestError,ex.Message));
                     }
                 }
                 else

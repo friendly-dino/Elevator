@@ -13,7 +13,7 @@ namespace Elevator.App
     {
         public int OriginFloor { get; set; }
         public int GotoFloor { get; }
-        public int? ElevatorID { get; }
+        public int? ElevatorID { get; set; }
         public Direction DirectionRequest { get; }
 
         /// <summary>

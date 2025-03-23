@@ -20,7 +20,7 @@ namespace Elevator.App
 
                 elevatorController.AddRequest(new RequestDetail(3, Direction.GoDown));
                 //Thread.Sleep(5000);
-                elevatorController.AddRequest(new RequestDetail(5, Direction.GoUp));
+                //elevatorController.AddRequest(new RequestDetail(5, Direction.GoUp));
                 //elevatorController.AddRequest(new RequestDetail(9, Direction.GoDown));
                 //elevatorController.AddRequest(new RequestDetail(7, Direction.GoDown));
 

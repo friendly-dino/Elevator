@@ -15,7 +15,7 @@ namespace Elevator.App.Interface
         /// <summary>
         /// Unique ID for each elevator car.
         /// </summary>
-        public int? ElevatorID { get; }
+        public int? ElevatorID { get; set; }
         /// <summary>
         /// The elevator direction to be requested.
         /// </summary>
