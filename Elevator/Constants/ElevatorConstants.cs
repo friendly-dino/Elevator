@@ -9,7 +9,7 @@ namespace Elevator.App.Constants
     public static class ElevatorConstants
     {
         public const int MoveDuration = 300;
-        public const int PassengerDuration = 1000;
+        public const int PassengerDuration = 100;
         public const byte MaxFloors = 10;
         public const byte NumberOfElevators = 4;
 

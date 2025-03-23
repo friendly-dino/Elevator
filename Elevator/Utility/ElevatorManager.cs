@@ -79,24 +79,8 @@ namespace Elevator.App.Utility
                 Thread.Sleep(ElevatorConstants.MoveDuration); // Simulating elevator movement between floors 
             }
             if (CurrentFloor == 1) //override direction when in 1F
-            {
                 CurrentDirection = Direction.GoUp;
-            }
-            //Thread.Sleep(ElevatorConstants.PassengerDuration); // Simulating passengers entering/leaving 
-        }
-        public int[] SortFloors(string inputFloors, int currentFloor, Direction direction)
-        {
-            // Split the floors into two parts
-            int[] floors = inputFloors.Split(',').Select(floor => int.Parse(floor.Trim())).ToArray();
-            var higher = floors.Where(f => f > currentFloor).OrderBy(f => f).ToArray();
-            var lower = floors.Where(f => f < currentFloor).OrderByDescending(f => f).ToArray();
-
-            if (direction == Direction.GoUp)
-                return higher.Concat(lower).ToArray();
-            else if (direction == Direction.GoDown)
-                return lower.Concat(higher).ToArray();
-            else
-                throw new ArgumentException("Invalid direction. Use 'up' or 'down'.");
+            Thread.Sleep(ElevatorConstants.PassengerDuration); // Simulating passengers entering/leaving 
         }
         public int GetInsertPosition(RequestDetail newRequest, Direction currentDirection, int currentFloor, List<RequestDetail> requests)
         {
@@ -116,45 +100,6 @@ namespace Elevator.App.Utility
                 if (!isNewFloorInCurrentDirection &&
                     HandleOppositeGroup(currentFloorInList, isExistingFloorInCurrentDirection, ref passedCurrentGroup, currentDirection, currentFloor, newRequest.GotoFloor))
                     break;
-                //if (isNewFloorInCurrentDirection)
-                //{
-                //    if (!isExistingFloorInCurrentDirection)
-                //    {
-                //        // Found first opposite group element, insert here
-                //        break;
-                //    }
-
-                //    // Stay within current group
-                //    if (currentDirection == Direction.GoUp)
-                //    {
-                //        if (current > newRequest.GotoFloor) break;
-                //    }
-                //    else
-                //    {
-                //        if (current < newRequest.GotoFloor) break;
-                //    }
-                //}
-                //else
-                //{
-                //    if (!passedCurrentGroup)
-                //    {
-                //        if (isExistingFloorInCurrentDirection)
-                //        {
-                //            insertPos++;
-                //            continue;
-                //        }
-                //        passedCurrentGroup = true;
-                //    }
-
-                //    if (currentDirection == Direction.GoUp)
-                //    {
-                //        if (current < newRequest.GotoFloor) break;
-                //    }
-                //    else
-                //    {
-                //        if (current > newRequest.GotoFloor) break;
-                //    }
-                //}
                 insertPos++;
             }
             return insertPos;

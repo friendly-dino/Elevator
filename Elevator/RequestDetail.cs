@@ -33,7 +33,7 @@ namespace Elevator.App
         /// </summary>
         /// <param name="requestedFloor">This is both the origin and destination floor</param>
         /// <param name="direction">The requested direction upon user request.</param>
-        /// /// <param name="elevID">Specify which elevator to use.</param>
+        /// <param name="elevID">Specify which elevator to use.</param>
         public RequestDetail(int requestedFloor, Direction direction, int? elevID = null)
         {
             GotoFloor = requestedFloor;

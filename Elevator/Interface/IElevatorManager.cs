@@ -16,14 +16,6 @@ namespace Elevator.App.Interface
         /// <returns>Elevator object containing the elevator ID.</returns>
         IElevator FindBestElevator(int requestedFloor,Direction requestedDirection);
         /// <summary>
-        /// Efficiently sorts the floors array depending on the current floor to avoid redundant trips.
-        /// </summary>
-        /// <param name="inputFloors">The requested floor/s.</param>
-        /// <param name="currentFloor">The floor which elevator is currently on.</param>
-        /// <param name="direction">Current elevator direction.</param>
-        /// <returns></returns>
-        int[] SortFloors(string inputFloors, int currentFloor, Direction direction);
-        /// <summary>
         /// Indicates whether the elevator would go up or down.
         /// </summary>
         /// <param name="targetFloor">Floor which the elevator would go.</param>

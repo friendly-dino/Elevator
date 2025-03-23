@@ -39,15 +39,6 @@ namespace Elevator.App.Controller
             lock (lockObj)
                 _sortedRequests.Add(request);
         }
-
-        //public void AddRequest(RequestDetail request)
-        //{
-        //    if ( request.GotoFloor > _maxFloors || request.GotoFloor < 1)
-        //        throw new InvalidRequestException(ElevatorConstants.InvalidReqMsg);
-
-        //    lock (lockObj)
-        //        _requests.Add(request);
-        //}
         [LogException]
         private async Task ProcessRequestsAsync(CancellationToken cancellationToken)
         {
@@ -62,7 +53,6 @@ namespace Elevator.App.Controller
                         _sortedRequests.Remove(nextRequest); // Remove after processing
                     }
                 }
-
                 if (nextRequest != null)
                 {
                     try
