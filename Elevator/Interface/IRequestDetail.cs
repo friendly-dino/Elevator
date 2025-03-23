@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Elevator.Enum;
 
 namespace Elevator.App.Interface
 {
@@ -11,7 +7,7 @@ namespace Elevator.App.Interface
         /// <summary>
         /// The floor from which the elevator came from.
         /// </summary>
-        int OriginFloor { get; }
+        int OriginFloor { get; set; }
         /// <summary>
         /// The floor which the elevator would go to. ie destination.
         /// </summary>
@@ -19,6 +15,11 @@ namespace Elevator.App.Interface
         /// <summary>
         /// Unique ID for each elevator car.
         /// </summary>
-        public int? ElevatorID { get; }
+        public int? ElevatorID { get; set; }
+        /// <summary>
+        /// The elevator direction to be requested.
+        /// </summary>
+        Direction DirectionRequest { get; }
+
     }
 }

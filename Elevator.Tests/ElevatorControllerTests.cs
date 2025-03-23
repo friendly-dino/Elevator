@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using Elevator.App.Controller;
 using Elevator.App;
 using Elevator.App.Interface;
-using Elevator.App.Utility;
 using Elevator.App.Exceptions;
 
 namespace Elevator.Tests
@@ -35,7 +34,7 @@ namespace Elevator.Tests
         [Test]
         public void AddRequest_InvalidInput_ThrowsException()
         {
-            var request = new RequestDetail(15, 6); // Exceeds max floors and elevators
+            var request = new RequestDetail(15, 0); // Exceeds max floors and elevators
             Assert.Throws<InvalidRequestException>(() => _controller.AddRequest(request));
         }
 
@@ -47,10 +46,10 @@ namespace Elevator.Tests
             mockElevator.Setup(e => e.CurrentFloor).Returns(5);
 
             _mockElevatorManager
-                .Setup(m => m.FindBestElevator(It.IsAny<int>()))
+                .Setup(m => m.FindBestElevator(It.IsAny<int>(),Enum.Direction.GoUp))
                 .Returns(mockElevator.Object);
 
-            var bestElevator = _mockElevatorManager.Object.FindBestElevator(3);
+            var bestElevator = _mockElevatorManager.Object.FindBestElevator(3, Enum.Direction.GoUp);
 
             Assert.IsNotNull(bestElevator);
             Assert.That(bestElevator.ElevatorID, Is.EqualTo(1));
