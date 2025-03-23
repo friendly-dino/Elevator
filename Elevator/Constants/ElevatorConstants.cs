@@ -20,7 +20,7 @@ namespace Elevator.App.Constants
 
         public const string RequestComplete = "Elevator {0} completed request: From {1}F -> To {2}F";
         public const string ElevetorUnavailable = "No elevator available at the moment: {0}";
-        public const string InvalidFormat = "Invalid value or input format. {0}";
+        public const string InvalidFormat = "Invalid value or input format.";
         public const string ProcessRequestError = "Elevator {0} encountered an error. Details: {1}";
         public const string RequestError = "Processing request error. Details: {1}";
         public const string MaxFloorExceeded = "Input contains value greater than maximum number of floors.";
