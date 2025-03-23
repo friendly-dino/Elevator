@@ -79,75 +79,63 @@ namespace Elevator.App
         [LogException]
         private async Task ProcessRequestsAsync(CancellationToken cancellationToken)
         {
-            try
+            while (!cancellationToken.IsCancellationRequested)
             {
-                while (!cancellationToken.IsCancellationRequested)
+                if (_elevatorRequests.Count > 0)
                 {
-                    if (_elevatorRequests.Count > 0)
+                    lock (lockObj)
                     {
-                        lock (lockObj)
+                        while (_elevatorRequests.Count > 0)
                         {
-                            while (_elevatorRequests.Count > 0)
+                            try
                             {
-
                                 bool shouldRemove = true;
-                                var request = _elevatorRequests[0]; // Get the next request from the queue
 
+                                var request = _elevatorRequests[0]; // Get the next request from the queue
                                 _elevatorManager.MoveToFloor(request.GotoFloor);
 
                                 CurrentDestination = request.GotoFloor;
                                 CurrentFloor = CurrentDestination;
                                 CurrentDirection = request.DirectionRequest;
 
-                                //use this for continuos logging even for multiple input prompt----------------------------------------------------------------------------
-                                //but this is less readable since i only use one console window
-                                //
-                                //Console.WriteLine($"Elevator {ElevatorID} has reached {CurrentDestination}F [{CurrentDirection}]. Please enter your destination floor:");
-                                //string? inputFloors = Console.ReadLine();
-                                //
-                                //end--------------------------------------------------------------------------------------------------------------------------------------
-
                                 string? inputFloors;
-                                lock (InputLock) // Ensure only one prompt at a time
+                                lock (InputLock)
                                 {
                                     Console.WriteLine($"Elevator {ElevatorID} has reached {CurrentDestination}F [{GetCurrentDirection()}]. Please enter your destination floor:");
                                     inputFloors = Console.ReadLine();
                                 }
+
                                 if (!string.IsNullOrEmpty(inputFloors))
                                 {
-                                    try
+                                    if (inputFloors.Equals("x")) // Simulate no new request with "x" input
                                     {
-                                        if (inputFloors.Equals("x")) //simulates no new request with "x" input
-                                        {
-                                            _elevatorRequests.RemoveAt(0);
-                                            continue;
-                                        }
-                                        InsertRequestInOrder(_elevatorRequests, inputFloors, CurrentDestination, CurrentDirection);
-                                        shouldRemove = false;
+                                        _elevatorRequests.RemoveAt(0);
+                                        continue;
                                     }
-                                    catch (Exception ex)
-                                    {
-                                        throw new ElevatorProcessRequestException(String.Format(ElevatorConstants.InvalidFormat, ex.Message));
-                                    }
+                                    // Attempt to process user input and add new request
+                                    InsertRequestInOrder(_elevatorRequests, inputFloors, CurrentDestination, CurrentDirection);
+                                    shouldRemove = false;
                                 }
+
                                 if (shouldRemove)
                                     _elevatorRequests.RemoveAt(0); // Remove the processed request
                             }
+                            catch (Exception ex)
+                            {
+                                _elevatorRequests.RemoveAt(0); // Remove the failed request to avoid blocking
+                                throw new ElevatorProcessRequestException(String.Format(ElevatorConstants.ProcessRequestError,ElevatorID,ex.Message));
+                            }
                         }
                     }
-                    else
-                    {
-                        // No requests available, so idle for a moment before checking again
-                        await Task.Delay(500, cancellationToken); // Add a small delay to avoid excessive CPU usage
-                    }
+                }
+                else
+                {
+                    // No requests available, so idle for a moment before checking again
+                    await Task.Delay(500, cancellationToken);
                 }
             }
-            catch (Exception ex)
-            {
-                throw new ElevatorProcessRequestException(string.Format(ElevatorConstants.ProcessRequestError,ElevatorID, ex.Message));
-            }
-
         }
+
         private Direction GetCurrentDirection() 
         {
             if (CurrentFloor == 1)
