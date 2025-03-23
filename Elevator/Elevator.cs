@@ -25,7 +25,17 @@ namespace Elevator.App
         {
             ElevatorID = id;
             if (startTask)
-                _elevatorTask = ProcessRequestsAsync(_cancellationTokenSource.Token);
+            {
+                _elevatorTask = Task.Run(() => ProcessRequestsAsync(_cancellationTokenSource.Token)).ContinueWith(t =>
+                {
+                    if (t.Exception != null)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine(t.Exception.InnerException);
+                        Console.ResetColor();
+                    }
+                }, TaskContinuationOptions.OnlyOnFaulted);
+            }
             _elevatorManager = new ElevatorManager(ElevatorID);
         }
         #endregion
@@ -51,6 +61,10 @@ namespace Elevator.App
         private void InsertRequestInOrder(List<RequestDetail> requests, string inputFloors, int currentFloor, Direction currentDirection)
         {
             int[] newRequests = inputFloors.Split(',').Select(floor => int.Parse(floor.Trim())).ToArray();
+
+            if (newRequests.Any(n => n > 10))   
+                throw new Exception(ElevatorConstants.MaxFloorExceeded);
+
             foreach (int floor in newRequests)
             {
                 var inputFloorDirection = (floor > currentFloor) ? Direction.GoUp : Direction.GoDown;
@@ -66,17 +80,17 @@ namespace Elevator.App
         [LogException]
         private async Task ProcessRequestsAsync(CancellationToken cancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            try
             {
-                if (_elevatorRequests.Count > 0)
+                while (!cancellationToken.IsCancellationRequested)
                 {
-                    lock (lockObj)
+                    if (_elevatorRequests.Count > 0)
                     {
-                        try
+                        lock (lockObj)
                         {
                             while (_elevatorRequests.Count > 0)
                             {
-                                
+
                                 bool shouldRemove = true;
                                 var request = _elevatorRequests[0]; // Get the next request from the queue
 
@@ -97,8 +111,8 @@ namespace Elevator.App
                                 string? inputFloors;
                                 lock (InputLock) // Ensure only one prompt at a time
                                 {
-                                        Console.WriteLine($"Elevator {ElevatorID} has reached {CurrentDestination}F [{GetCurrentDirection()}]. Please enter your destination floor:");
-                                        inputFloors = Console.ReadLine();
+                                    Console.WriteLine($"Elevator {ElevatorID} has reached {CurrentDestination}F [{GetCurrentDirection()}]. Please enter your destination floor:");
+                                    inputFloors = Console.ReadLine();
                                 }
                                 if (!string.IsNullOrEmpty(inputFloors))
                                 {
@@ -106,34 +120,34 @@ namespace Elevator.App
                                     {
                                         if (inputFloors.Equals("x")) //simulates no new request with "x" input
                                         {
-                                            _elevatorRequests.RemoveAt(0); 
+                                            _elevatorRequests.RemoveAt(0);
                                             continue;
                                         }
                                         InsertRequestInOrder(_elevatorRequests, inputFloors, CurrentDestination, CurrentDirection);
                                         shouldRemove = false;
-                                     }
-                                    catch (FormatException)
+                                    }
+                                    catch (Exception ex)
                                     {
-                                        throw new FormatException(ElevatorConstants.InvalidFormat);
+                                        throw new ElevatorProcessRequestException(String.Format(ElevatorConstants.InvalidFormat, ex.Message));
                                     }
                                 }
                                 if (shouldRemove)
                                     _elevatorRequests.RemoveAt(0); // Remove the processed request
                             }
                         }
-                        catch (Exception ex)
-                        {
-                            throw new ElevatorProcessRequestException(string.Format(ElevatorConstants.ProcessRequestError, ex.Message));
-                        }
+                    }
+                    else
+                    {
+                        // No requests available, so idle for a moment before checking again
+                        await Task.Delay(500, cancellationToken); // Add a small delay to avoid excessive CPU usage
                     }
                 }
-                else
-                {
-                    // No requests available, so idle for a moment before checking again
-                    await Task.Delay(500, cancellationToken); // Add a small delay to avoid excessive CPU usage
-                }
-                    
             }
+            catch (Exception ex)
+            {
+                throw new ElevatorProcessRequestException(string.Format(ElevatorConstants.ProcessRequestError,ElevatorID, ex.Message));
+            }
+
         }
         private Direction GetCurrentDirection() 
         {

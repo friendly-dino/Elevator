@@ -28,7 +28,15 @@ namespace Elevator.App.Controller
                 _elevators.Add(new Elevator(i + 1));
 
             _elevatorManager = new ElevatorManager(_elevators);
-            Task.Run(() => ProcessRequestsAsync(_cancellationTokenSource.Token));
+            Task.Run(() => ProcessRequestsAsync(_cancellationTokenSource.Token)).ContinueWith(t =>
+            {
+                if (t.Exception != null)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine(t.Exception.InnerException);
+                    Console.ResetColor();
+                }
+            }, TaskContinuationOptions.OnlyOnFaulted); ;
         }
         #endregion
         [LogException]
@@ -44,35 +52,36 @@ namespace Elevator.App.Controller
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                RequestDetail? nextRequest = null;
-                lock (lockObj)
+                try
                 {
-                    if (_sortedRequests.Count > 0)
+                    RequestDetail? nextRequest = null;
+                    lock (lockObj)
                     {
-                        nextRequest = _sortedRequests.Min; // Get the lowest-priority item
-                        _sortedRequests.Remove(nextRequest); // Remove after processing
-                    }
-                }
-                if (nextRequest != null)
-                {
-                    try
-                    {
-                        IElevator? bestElevator = GetBestElevatorForRequest(nextRequest);
-                        if (bestElevator != null)
+                        if (_sortedRequests.Count > 0)
                         {
-                            nextRequest.ElevatorID = bestElevator.ElevatorID;
-                            bestElevator.AddRequest(nextRequest);
+                            nextRequest = _sortedRequests.Min; // Get the lowest-priority item
+                            _sortedRequests.Remove(nextRequest); // Remove after processing
                         }
-                        else
-                            ElevatorLog.Info(ElevatorConstants.NoElevatorMsg);
                     }
-                    catch (Exception ex)
+                    if (nextRequest != null)
                     {
-                        throw new ElevatorProcessRequestException(String.Format(ElevatorConstants.ProcessRequestError,ex.Message));
+                            IElevator? bestElevator = GetBestElevatorForRequest(nextRequest);
+                            if (bestElevator != null)
+                            {
+                                nextRequest.ElevatorID = bestElevator.ElevatorID;
+                                bestElevator.AddRequest(nextRequest);
+                            }
+                            else
+                                ElevatorLog.Info(ElevatorConstants.NoElevatorMsg);
                     }
+                    else
+                        await Task.Delay(500, cancellationToken); // Idle wait if no requests
                 }
-                else
-                    await Task.Delay(500); // Idle wait if no requests
+                catch (Exception ex)
+                {
+                    throw new ElevatorProcessRequestException(String.Format(ElevatorConstants.RequestError, ex.Message));
+                }
+               
             }
         }
         private IElevator? GetBestElevatorForRequest(RequestDetail request)
